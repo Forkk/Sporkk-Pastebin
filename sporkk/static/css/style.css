@@ -2,3 +2,8 @@
 {
 	margin-top: 40px;
 }
+
+div:whatever
+{
+	width: 100%;
+}
