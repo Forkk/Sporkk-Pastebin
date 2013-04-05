@@ -1,16 +1,14 @@
-<!DOCTYPE html>
-<html>
+{% extends "base.html" %}
+{% block title %}Sporkk URL Shortener - Submit{% endblock %}
 
-<head>
-	<title>Sporkk URL Shortener - Submit</title>
-</head>
-
-<body>
-	<h1>Shorten URLs</h1>
-	<form name="shorten" action="submit" method="POST">
-		URL to shorten: <input type="text" name="longurl"><br>
-		<input type="submit" name="Submit">
+{% block content %}
+	<form name="shorten" method="POST">
+		<legend>Shorten URL</legend>
+		{% if errormsg is defined %}
+		<div class="alert"><strong>Error: </strong>{{errormsg}}</div>
+		{% endif %}
+		<input type="text" name="longurl" placeholder="URL to shorten...">
+		<br />
+		<button type="submit" class="btn">Shorten</button>
 	</form>
-</body>
-
-</html>
+{% endblock %}

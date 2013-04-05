@@ -39,34 +39,42 @@ def generate_shorturl(length):
 	return ''.join(random.choice(string.ascii_lowercase + string.ascii_uppercase + string.digits) for x in range(length))
 
 
-@app.route('/', methods = ['GET'])
+@app.route('/', methods = ['GET', 'POST'])
 def submit_form():
 	"""The page for submitting things to the URL shortener."""
-	return render_template("shortener/submit-form.html")
+	if request.method == 'POST':
+		mapping = URLMapping()
 
-@app.route('/submit', methods = ['GET', 'POST'])
-def submit_url():
-	mapping = URLMapping()
+		mapping.longurl = request.form['longurl']
 
-	mapping.longurl = request.form['longurl']
+		# If the long URL is not a valid URL.
+		if not urlregex.search(mapping.longurl):
+			return render_template("shortener/submit-form.html", errormsg = "You must specify a valid URL.")
 
-	# Generate a random string for the short URL. Make sure it's not in use.
-	urlid = generate_shorturl(8)
-	while shorturl_taken(urlid):
+		# Generate a random string for the short URL. Make sure it's not in use.
 		urlid = generate_shorturl(8)
+		while shorturl_taken(urlid):
+			urlid = generate_shorturl(8)
 
-	mapping.urlid = urlid
+		mapping.urlid = urlid
 
-	db.session.add(mapping)
-	db.session.commit()
+		db.session.add(mapping)
+		db.session.commit()
 
-	return "Shortened to: http://localhost/%s" % mapping.urlid
+		return render_template("shortener/shorten-success.html", shortened_url = app.config['SHORTENER_ROOT_URL'] + mapping.urlid)
 
+	elif request.method == 'GET':
+		return render_template("shortener/submit-form.html")
+
+	else:
+		return "Unknown request method..."
 
 @app.route('/<url_id>')
 def shortener_redirect(url_id):
 	"""URL shortener page that redirects users from the shortened URL to the full URL."""
 	mapping = get_mapping(url_id)
+	if mapping is None:
+		return redirect("/")
 
 	return redirect(mapping.longurl)
 
