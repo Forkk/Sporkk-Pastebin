@@ -1,0 +1,6 @@
+# Standard stuff.
+*.pyc
+*.pyo
+*.DS_Store
+*.sublime-project
+*.sublime-workspace
