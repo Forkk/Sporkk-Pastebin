@@ -18,8 +18,6 @@ from flask import render_template, request, redirect, abort
 
 import string, random, re
 
-# TODO: Support subdomains.
-
 class URLMapping(db.Model):
 	"""Model for shortened URLs. Maps the short URL to the long version."""
 	urlid = db.Column(db.String(64), primary_key = True)
@@ -42,25 +40,13 @@ def generate_shorturl(length):
 def submit_form():
 	"""The page for submitting things to the URL shortener."""
 	if request.method == 'POST':
-		mapping = URLMapping()
+		action = request.form['action']
 
-		mapping.longurl = request.form['longurl']
+		if action == 'shorten':
+			return shortener_submit()
 
-		# If the long URL is not a valid URL.
-		if not urlregex.search(mapping.longurl):
-			return render_template("submit-form.html", shortener_errormsg = "You must specify a valid URL.")
-
-		# Generate a random string for the short URL. Make sure it's not in use.
-		urlid = generate_shorturl(8)
-		while shorturl_taken(urlid):
-			urlid = generate_shorturl(8)
-
-		mapping.urlid = urlid
-
-		db.session.add(mapping)
-		db.session.commit()
-
-		return render_template("shorten-success.html", shortened_url = app.config['SHORTENER_ROOT_URL'] + mapping.urlid)
+		else:
+			abort(400)
 
 	elif request.method == 'GET':
 		return render_template("submit-form.html")
@@ -68,8 +54,31 @@ def submit_form():
 	else:
 		abort(500)
 
+
+def shortener_submit():
+	mapping = URLMapping()
+
+	mapping.longurl = request.form['longurl']
+
+	# If the long URL is not a valid URL.
+	if not urlregex.search(mapping.longurl):
+		return render_template("submit-form.html", shortener_errormsg = "You must specify a valid URL.")
+
+	# Generate a random string for the short URL. Make sure it's not in use.
+	urlid = generate_shorturl(8)
+	while shorturl_taken(urlid):
+		urlid = generate_shorturl(8)
+
+	mapping.urlid = urlid
+
+	db.session.add(mapping)
+	db.session.commit()
+
+	return render_template("shorten-success.html", shortened_url = app.config['SHORTENER_ROOT_URL'] + mapping.urlid)
+
+
 @app.route('/<url_id>')
-def shortener_redirect(url_id):
+def url_redirect(url_id):
 	"""URL shortener page that redirects users from the shortened URL to the full URL."""
 	mapping = get_mapping(url_id)
 	if mapping is None:
