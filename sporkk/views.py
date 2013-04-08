@@ -15,24 +15,47 @@
 from . import app, db
 
 from flask import render_template, request, redirect, abort
+from flask.ext.sqlalchemy import orm
 
 import string, random, re
 
+
 class URLMapping(db.Model):
-	"""Model for shortened URLs. Maps the short URL to the long version."""
-	urlid = db.Column(db.String(64), primary_key = True)
-	longurl = db.Column(db.Text)
+	"""Model for mapping URLs to their corresponding items."""
+	__tablename__ = "url_map"
+
+	url_id = db.Column(db.String(64), primary_key = True)
+	url_type = db.Column(db.String(10))
+
+	__mapper_args__ = { 'polymorphic_identity': 'urlmap', 
+		'polymorphic_on': url_type,
+		'with_polymorphic': '*',
+	}
+
+
+class ShortenedURL(URLMapping):
+	"""Model for shortened URLs"""
+	__tablename__ = "shortened_urls"
+
+	url_id = db.Column(db.String(64), db.ForeignKey('url_map.url_id'), primary_key = True)
+
+	mapped_url = db.Column(db.Text)
+
+	__mapper_args__ = { 'polymorphic_identity': 'short', }
 
 
 urlregex = re.compile(r'^(https?|ftp)://')
 
-def get_mapping(urlid):
-	return URLMapping.query.filter_by(urlid = urlid).first()
+def get_mapping(url_id):
+	return db.session.query(db.with_polymorphic(URLMapping, '*')).filter_by(url_id = url_id).first()
 
-def shorturl_taken(urlid):
-	return get_mapping(urlid) is not None
+def get_shorturl(url_id):
+	return ShortenedURL.query.filter_by(url_id = url_id).first()
 
-def generate_shorturl(length):
+def url_id_taken(url_id):
+	return get_mapping(url_id) is not None
+
+def generate_url_id(length):
 	return ''.join(random.choice(string.ascii_lowercase + string.ascii_uppercase + string.digits) for x in range(length))
 
 
@@ -56,35 +79,53 @@ def submit_form():
 
 
 def shortener_submit():
-	mapping = URLMapping()
-
-	mapping.longurl = request.form['longurl']
+	longurl = request.form['longurl']
 
 	# If the long URL is not a valid URL.
-	if not urlregex.search(mapping.longurl):
+	if not urlregex.search(longurl):
 		return render_template("submit-form.html", shortener_errormsg = "You must specify a valid URL.")
 
-	# Generate a random string for the short URL. Make sure it's not in use.
-	urlid = generate_shorturl(8)
-	while shorturl_taken(urlid):
-		urlid = generate_shorturl(8)
+	# Generate a random string for the URL id. Make sure it's not in use.
+	url_id = generate_url_id(8)
+	while url_id_taken(url_id):
+		url_id = generate_url_id(8)
 
-	mapping.urlid = urlid
+	shorturl = ShortenedURL()
+	shorturl.url_id = url_id
+	shorturl.mapped_url = longurl
 
-	db.session.add(mapping)
+	db.session.add(shorturl)
 	db.session.commit()
 
-	return render_template("shorten-success.html", shortened_url = app.config['SHORTENER_ROOT_URL'] + mapping.urlid)
+	return render_template("shorten-success.html", shortened_url = app.config['SHORTENER_ROOT_URL'] + shorturl.url_id)
 
-
+# For any URLs
 @app.route('/<url_id>')
-def url_redirect(url_id):
-	"""URL shortener page that redirects users from the shortened URL to the full URL."""
+def url_id_view(url_id):
+	"""View that goes to whatever the specified URL ID maps to."""
 	mapping = get_mapping(url_id)
-	if mapping is None:
+
+	# If this URL maps to a shortened URL, redirect.
+	if type(mapping) is ShortenedURL:
+		return handle_shorturl(mapping)
+
+	else:
 		return redirect("/")
 
-	return redirect(mapping.longurl)
+
+@app.route('/s/<url_id>')
+@app.route('/short/<url_id>')
+def shorturl_view(url_id):
+	"""View for shortened URLs only."""
+	shorturl = get_shorturl(url_id)
+	return handle_shorturl(shorturl)
+
+
+def handle_shorturl(shorturl):
+	if shorturl is None:
+		return redirect("/")
+
+	return redirect(shorturl.mapped_url)
 
 
 # Initialize the DB table.
