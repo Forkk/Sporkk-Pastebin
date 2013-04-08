@@ -18,11 +18,9 @@
 
 
 {% block content %}
-{% if lang is defined %}
-<pre class="prettyprint linenums lang-{{ lang }}">{% else %}
-<pre class="prettyprint linenums">
-{% endif %}{{ paste_content }}
-</pre>
+{% if syntax_highlight %}
+<pre class="prettyprint linenums">{% else %}
+<pre>{% endif %}{% if lang is defined %}<code class="lang-{{ lang }}">{{ paste_content }}</code>{% else %}{{ paste_content }}{% endif %}</pre>
 {% endblock %}
 
 

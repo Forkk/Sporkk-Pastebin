@@ -52,6 +52,10 @@ class Paste(URLMapping):
 
 	paste_content = db.Column(db.Text)
 
+	highlight_lang = db.Column(db.String(6))
+
+	pasted_by = db.Column(db.Text) # May be used later...
+
 	__mapper_args__ = { 'polymorphic_identity': 'paste', }
 
 
@@ -120,6 +124,10 @@ def shortener_submit():
 def paste_submit():
 	paste_content = request.form['paste_content']
 
+	syntax_highlight = 'none'
+	if 'syntax_highlight' in request.form and request.form['syntax_highlight']:
+		syntax_highlight = 'auto'
+
 	# Generate a random string for the URL ID. Make sure it's not in use.
 	url_id = generate_url_id(8)
 	while url_id_taken(url_id):
@@ -128,6 +136,7 @@ def paste_submit():
 	paste = Paste()
 	paste.url_id = url_id
 	paste.paste_content = paste_content
+	paste.highlight_lang = syntax_highlight
 
 	db.session.add(paste)
 	db.session.commit()
@@ -175,12 +184,29 @@ def handle_shorturl(shorturl):
 	return redirect(shorturl.mapped_url)
 
 
+
 def handle_paste(paste):
 	if paste is None:
 		return redirect("/")
 
-	return render_template("pastebin-view.html", paste_content = paste.paste_content)
+	pprint = False
+	if paste.highlight_lang is not None and paste.highlight_lang != 'none':
+		pprint = True
+
+	return render_template("pastebin-view.html", paste_content = paste.paste_content, syntax_highlight = pprint)
 
 
 # Initialize the DB table.
 db.create_all()
+
+
+# Dict that maps a language name as it's stored in the DB to its prettyprint name.
+# Java, Python, Bash, SQL, HTML, XML, CSS, Javascript, Makefiles, and Rust
+pp_langmap = {
+	"c": "c",
+	"c++": "cpp",
+	"c#": "cs",
+	"java": "java",
+	"python": "py",
+	"xml": "xml",
+}
