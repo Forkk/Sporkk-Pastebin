@@ -1,9 +1,25 @@
 {% extends "base.html" %}
 {% block title %}Sporkk - Submit{% endblock %}
 
+{% block css_head %}
+{{ super() }}
+
+<style type='text/css'>
+.expand
+{
+
+	width: 100%;
+	-webkit-box-sizing: border-box;
+	   -moz-box-sizing: border-box;
+	        box-sizing: border-box;
+}
+</style>
+{% endblock %}
+
 {% block content %}
 	<ul class="nav nav-tabs">
 		<li class="active"><a href="#tab-shortener" data-toggle="tab">URL Shortener</a></li>
+		<li><a href="#tab-paste" data-toggle="tab">Pastebin</a></li>
 	</ul>
 
 	<div class="tab-content">
@@ -14,9 +30,22 @@
 					<div class="alert"><strong>Error: </strong>{{shortener_errormsg}}</div>
 				{% endif %}
 
-				<input type="text" name="longurl" placeholder="URL to shorten..." style="width: 95%;">
+				<input type="text" name="longurl" placeholder="URL to shorten..." class="expand">
 				<br />
 				<button type="submit" name="action" value="shorten" class="btn">Shorten URL</button>
+			</form>
+		</div>
+
+		<div class="tab-pane" id="tab-paste">
+			<form name="paste" method="POST">
+				<legend>Pastebin</legend>
+				{% if paste_errormsg is defined %}
+					<div class="alert"><strong>Error: </strong>{{paste_errormsg}}</div>
+				{% endif %}
+
+				<textarea type="text" name="paste_content" placeholder="Paste content..." cols="100" rows="20" wrap="true" class="expand"></textarea>
+				<br />
+				<button type="submit" name="action" value="paste" class="btn">Submit</button>
 			</form>
 		</div>
 	</div>

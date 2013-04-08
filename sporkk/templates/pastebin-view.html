@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Sporkk - View Paste{% endblock %}
+
+{% block css_head %}
+{{ super() }}
+<link rel='stylesheet' type='text/css' href='/static/css/prettify.css' />
+<link rel='stylesheet' type='text/css' href='/static/css/prettify-bootstrap.css' />
+{% endblock %}
+
+
+
+{% block js_head %}
+{{ super() }}
+<!-- <script src="https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js?autoload=true&amp;lang=css" defer="defer"></script> -->
+<script type="text/javascript" src="/static/js/prettify.js"></script>
+{% endblock %}
+
+
+
+{% block content %}
+{% if lang is defined %}
+<pre class="prettyprint linenums lang-{{ lang }}">{% else %}
+<pre class="prettyprint linenums">
+{% endif %}{{ paste_content }}
+</pre>
+{% endblock %}
+
+
+
+{% block js_body %}
+{{ super() }}
+<script>
+  !function ($) {
+    $(function(){
+      window.prettyPrint && prettyPrint()   
+    })
+  }(window.jQuery)
+</script>
+{% endblock %}
