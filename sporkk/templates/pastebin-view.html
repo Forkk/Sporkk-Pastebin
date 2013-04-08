@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Sporkk - View Paste{% endblock %}
+{% block title %}{% if poster != None %}Paste by {{ poster }}{% else %}Paste by anonymous user{% endif %}{% endblock %}
 
 {% block css_head %}
 {{ super() }}

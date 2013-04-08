@@ -27,6 +27,8 @@ class URLMapping(db.Model):
 	url_id = db.Column(db.String(64), primary_key = True)
 	url_type = db.Column(db.String(10))
 
+	posted_by = db.Column(db.String(50))
+
 	__mapper_args__ = { 'polymorphic_identity': 'urlmap', 
 		'polymorphic_on': url_type,
 		'with_polymorphic': '*',
@@ -53,8 +55,6 @@ class Paste(URLMapping):
 	paste_content = db.Column(db.Text)
 
 	highlight_lang = db.Column(db.String(6))
-
-	pasted_by = db.Column(db.Text) # May be used later...
 
 	__mapper_args__ = { 'polymorphic_identity': 'paste', }
 
@@ -128,6 +128,10 @@ def paste_submit():
 	if 'syntax_highlight' in request.form and request.form['syntax_highlight']:
 		syntax_highlight = 'auto'
 
+	poster_name = None
+	if 'poster_name' in request.form and request.form['poster_name'] is not None: 
+		poster_name = request.form['poster_name']
+
 	# Generate a random string for the URL ID. Make sure it's not in use.
 	url_id = generate_url_id(8)
 	while url_id_taken(url_id):
@@ -137,6 +141,7 @@ def paste_submit():
 	paste.url_id = url_id
 	paste.paste_content = paste_content
 	paste.highlight_lang = syntax_highlight
+	paste.posted_by = poster_name
 
 	db.session.add(paste)
 	db.session.commit()
@@ -193,7 +198,12 @@ def handle_paste(paste):
 	if paste.highlight_lang is not None and paste.highlight_lang != 'none':
 		pprint = True
 
-	return render_template("pastebin-view.html", paste_content = paste.paste_content, syntax_highlight = pprint)
+	poster = paste.posted_by
+	if poster == '':
+		poster = None
+
+	return render_template("pastebin-view.html", paste_content = paste.paste_content, syntax_highlight = pprint, 
+		poster = poster)
 
 
 # Initialize the DB table.
