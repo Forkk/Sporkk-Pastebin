@@ -14,7 +14,7 @@
 
 from . import app, db
 
-from flask import render_template, request, redirect
+from flask import render_template, request, redirect, abort
 
 import string, random, re
 
@@ -22,12 +22,11 @@ import string, random, re
 
 class URLMapping(db.Model):
 	"""Model for shortened URLs. Maps the short URL to the long version."""
-	id = db.Column(db.Integer, primary_key = True)
-	urlid = db.Column(db.String(64), unique = True)
+	urlid = db.Column(db.String(64), primary_key = True)
 	longurl = db.Column(db.Text)
 
 
-urlregex = re.compile(r'^(http|ftp)s?://')
+urlregex = re.compile(r'^(https?|ftp)://')
 
 def get_mapping(urlid):
 	return URLMapping.query.filter_by(urlid = urlid).first()
@@ -49,7 +48,7 @@ def submit_form():
 
 		# If the long URL is not a valid URL.
 		if not urlregex.search(mapping.longurl):
-			return render_template("shortener/submit-form.html", errormsg = "You must specify a valid URL.")
+			return render_template("submit-form.html", shortener_errormsg = "You must specify a valid URL.")
 
 		# Generate a random string for the short URL. Make sure it's not in use.
 		urlid = generate_shorturl(8)
@@ -61,13 +60,13 @@ def submit_form():
 		db.session.add(mapping)
 		db.session.commit()
 
-		return render_template("shortener/shorten-success.html", shortened_url = app.config['SHORTENER_ROOT_URL'] + mapping.urlid)
+		return render_template("shorten-success.html", shortened_url = app.config['SHORTENER_ROOT_URL'] + mapping.urlid)
 
 	elif request.method == 'GET':
-		return render_template("shortener/submit-form.html")
+		return render_template("submit-form.html")
 
 	else:
-		return "Unknown request method..."
+		abort(500)
 
 @app.route('/<url_id>')
 def shortener_redirect(url_id):

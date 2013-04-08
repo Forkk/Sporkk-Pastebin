@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Sporkk URL Shortener - Submit{% endblock %}
+
+{% block content %}
+	<ul class="nav nav-tabs">
+		<li class="active"><a href="#tab-shortener" data-toggle="tab">URL Shortener</a></li>
+	</ul>
+
+	<div class="tab-content">
+		<div class="tab-pane active" id="tab-shortener">
+			<form name="shorten" method="POST">
+				<legend>Shorten URL</legend>
+				{% if shortener_errormsg is defined %}
+					<div class="alert"><strong>Error: </strong>{{shortener_errormsg}}</div>
+				{% endif %}
+
+				<input type="text" name="longurl" placeholder="URL to shorten..." style="width: 95%;">
+				<br />
+				<button type="submit" class="btn">Shorten URL</button>
+			</form>
+		</div>
+	</div>
+{% endblock %}
