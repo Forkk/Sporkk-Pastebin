@@ -21,4 +21,4 @@ app.config.from_envvar('SPORKK_SETTINGS')
 
 db = SQLAlchemy(app)
 
-import sporkk.shortener
+import sporkk.views

@@ -1,2 +1,4 @@
 from sporkk import app
-app.run(app.config.get('SERVER_NAME'), app.config.get('SERVER_PORT'))
+
+if __name__ == "__main__":
+	app.run(app.config.get('SERVER_NAME'), app.config.get('SERVER_PORT'))
