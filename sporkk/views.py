@@ -16,45 +16,12 @@ from . import app, db
 
 from flask import render_template, request, redirect, abort, url_for
 from flask.ext.sqlalchemy import orm
-	
-import string, random, re
 
+from urlmodel import URLMapping, get_mapping, url_id_taken, generate_unused_url_id
 
-class URLMapping(db.Model):
-	"""Model for mapping URLs to their corresponding items."""
-	__tablename__ = "url_map"
-
-	url_id = db.Column(db.String(64), primary_key = True)
-	url_type = db.Column(db.String(10))
-
-	posted_by = db.Column(db.String(50))
-
-	__mapper_args__ = { 'polymorphic_identity': 'urlmap', 
-		'polymorphic_on': url_type,
-		'with_polymorphic': '*',
-	}
-
+import re
 
 urlregex = re.compile(r'^(https?|ftp)://')
-
-def get_mapping(url_id):
-	return db.session.query(db.with_polymorphic(URLMapping, '*')).filter_by(url_id = url_id).first()
-
-def url_id_taken(url_id):
-	"""Checks if the given URL ID is taken."""
-	return get_mapping(url_id) is not None
-
-def generate_url_id(length):
-	"""Generates a random URL ID with the given length."""
-	return ''.join(random.choice(string.ascii_lowercase + string.ascii_uppercase + string.digits) for x in range(length))
-
-def generate_unused_url_id(length = app.config.get('SHORTURL_LENGTH')):
-	"""Generates a URL ID that isn't in use."""
-	url_id = generate_url_id(length)
-	while url_id_taken(url_id):
-		url_id = generate_url_id(length)
-	return url_id
-
 
 @app.route('/', methods = ['GET', 'POST'])
 def submit_form():
@@ -142,7 +109,7 @@ def shortener_submit():
 		return render_template("submit-form.html", shortener_errormsg = "You must specify a valid URL.")
 
 	# Generate a random string for the URL ID. Make sure it's not in use.
-	url_id = generate_unused_url_id()
+	url_id = generate_unused_url_id(app.config.get('SHORTURL_LENGTH'))
 
 	shorturl = ShortenedURL()
 	shorturl.url_id = url_id
@@ -215,7 +182,7 @@ def paste_submit():
 		poster_name = request.form['poster_name']
 
 	# Generate a random string for the URL ID. Make sure it's not in use.
-	url_id = generate_unused_url_id()
+	url_id = generate_unused_url_id(app.config.get('SHORTURL_LENGTH'))
 
 	paste = Paste()
 	paste.url_id = url_id
