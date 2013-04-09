@@ -1,6 +1,23 @@
 {% extends "submit-form.html" %}
 {% block title %}Sporkk - URL Shortener{% endblock %}
 
+{% block css_head %}
+{{ super() }}
+
+<style type='text/css'>
+td.rspace
+{
+	padding-right: 4px;
+}
+
+td.lspace
+{
+	padding-left: 4px;
+}
+</style>
+
+{% endblock %}
+
 {% block form %}
 <form name="paste" method="POST">
 	<legend>Pastebin</legend>
@@ -10,12 +27,25 @@
 	{% endif %}
 	#}
 
-	<label class="text" for="poster_name">Poster Name: </label>
-	<input type="text" name="poster_name" placeholder="Anonymous">
+	<table>
+		<tr>
+			<td class="rspace"><label class="text" for="poster_name">Poster Name</label></td>
+			<td class="lspace"><label class="text" for="syntax">Syntax Highlighting</label></td>
+		</tr>
+		<tr>
+			<td class="rspace"><input type="text" name="poster_name" tabindex="1" placeholder="Anonymous"></td>
+			<td class="lspace"><select name="syntax" tabindex="2">
+				{% for dbname, item in syntax_options.iteritems() %}
+					<option value="{{ dbname }}">{{ item.dispname }}</option>
+				{% endfor %}
+			</select></td>
+		</tr>
+	</table>
 
-	<label class="checkbox"><input type="checkbox" name="syntax_highlight" value="syntax_highlight">Enable syntax highlighting?</label>
-	<textarea type="text" name="paste_content" placeholder="Paste content..." cols="100" rows="20" wrap="true" class="expand"></textarea>
+	<!-- <label class="checkbox"><input type="checkbox" name="syntax_highlight" value="syntax_highlight">Enable syntax highlighting?</label> -->
+
+	<textarea type="text" name="paste_content" tabindex="3" placeholder="Paste content..." cols="100" rows="20" wrap="true" class="expand"></textarea>
 	<br />
-	<button type="submit" name="action" value="paste" class="btn">Submit</button>
+	<button type="submit" name="action" value="paste" tabindex="4" class="btn">Submit</button>
 </form>
 {% endblock %}

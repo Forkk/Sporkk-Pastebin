@@ -19,6 +19,8 @@ from flask import render_template, redirect, abort, url_for
 from urltype import URLType, URLTypeSubmitForm
 from urlmodel import URLMapping, generate_unused_url_id
 
+from collections import OrderedDict
+
 def get_url_types_provided():
 	"""Returns a list of the URL types provided by this module."""
 	return url_types
@@ -30,30 +32,34 @@ class PastebinURLType(URLType):
 		return URLTypeSubmitForm("pastebin-form.html", "paste", "Pastebin")
 
 	def handle_submit_form(self, form_info_list):
-		return render_template("pastebin-form.html", submit_forms = form_info_list)
+		return render_template("pastebin-form.html", submit_forms = form_info_list, syntax_options = pp_langs)
 
 	def handle_view(self, url_id, paste):
 		if paste is None:
 			return redirect("/")
 
-		pprint = False
-		if paste.highlight_lang is not None and paste.highlight_lang != 'none':
-			pprint = True
+		dbhname = paste.highlight_lang
+		ppname = None
+		if dbhname in pp_langs:
+			ppname = pp_langs[dbhname]['ppname']
 
 		poster = paste.posted_by
 		if poster == '':
 			poster = None
 
-		return render_template("pastebin-view.html", paste_content = paste.paste_content, syntax_highlight = pprint, 
+		return render_template("pastebin-view.html", 
+			paste_content = paste.paste_content, 
+			syntax_highlight = ppname is not None and ppname != '', 
+			lang = ppname,
 			poster = poster)
 
 
 	def handle_submit(self, request):
 		paste_content = request.form['paste_content']
 
-		syntax_highlight = 'none'
-		if 'syntax_highlight' in request.form and request.form['syntax_highlight']:
-			syntax_highlight = 'auto'
+		syntax_highlight = None
+		if 'syntax' in request.form and request.form['syntax'] is not None:
+			syntax_highlight = request.form['syntax']
 
 		poster_name = None
 		if 'poster_name' in request.form and request.form['poster_name'] is not None: 
@@ -68,10 +74,10 @@ class PastebinURLType(URLType):
 		paste = PasteModel()
 		paste.url_id = url_id
 		paste.paste_content = paste_content
-		paste.highlight_lang = syntax_highlight
+		
 		paste.posted_by = poster_name
 		paste.poster_ip = request.remote_addr
-
+		paste.highlight_lang = syntax_highlight
 		db.session.add(paste)
 		db.session.commit()
 
@@ -104,6 +110,23 @@ def get_paste(url_id):
 	"""Looks up the given URL ID in the database and returns its corresponding paste.
 	Returns None if the URL ID is not a paste"""
 	return Paste.query.filter_by(url_id = url_id).first()
+
+# google-code-prettify language info
+pp_langs = OrderedDict([
+	(None, dict(dispname="Plain Text")), # I'm sorry.
+	("auto", dict(dispname="Automatic")),
+	("C", dict(ppname="c", dispname="C")),
+	("C++", dict(ppname="cpp", dispname="C++")),
+	("C#", dict(ppname="cs", dispname="C#")),
+	("HTML", dict(ppname="html", dispname="HTML")),
+	("XML", dict(ppname="xml", dispname="XML")),
+	("Java", dict(ppname="java", dispname="Java")),
+	("JavaScript", dict(ppname="js", dispname="JavaScript")),
+	("Python", dict(ppname="py", dispname="Python")),
+	("Perl", dict(ppname="perl", dispname="Perl")),
+	("Ruby", dict(ppname="rb", dispname="Ruby")),
+	("Bash", dict(ppname="bash", dispname="Bash"))
+])
 
 url_types = [ PastebinURLType() ]
 

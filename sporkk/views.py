@@ -116,15 +116,3 @@ for typemod in typemodules:
 
 # Initialize the DB table.
 db.create_all()
-
-
-# Dict that maps a language name as it's stored in the DB to its prettyprint name.
-# Java, Python, Bash, SQL, HTML, XML, CSS, Javascript, Makefiles, and Rust
-pp_langmap = {
-	"c": "c",
-	"c++": "cpp",
-	"c#": "cs",
-	"java": "java",
-	"python": "py",
-	"xml": "xml",
-}
