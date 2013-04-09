@@ -16,7 +16,7 @@ from . import app, db
 
 from flask import render_template, redirect, abort, url_for
 
-from urltype import URLType
+from urltype import URLType, URLTypeSubmitForm
 from urlmodel import URLMapping, generate_unused_url_id
 
 def get_url_types_provided():
@@ -25,6 +25,9 @@ def get_url_types_provided():
 
 class PastebinURLType(URLType):
 	"""URL type representing a pastebin URL."""
+
+	def get_submit_form(self):
+		return URLTypeSubmitForm("pastebin-form.html", "paste", "Pastebin")
 
 	def handle_view(self, url_id, paste):
 		if paste is None:

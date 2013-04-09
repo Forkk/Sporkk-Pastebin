@@ -1,0 +1,16 @@
+<form name="paste" method="POST">
+	<legend>Pastebin</legend>
+	{# Disabled. Error messages will be handled by the main submit form template.
+	{% if paste_errormsg is defined %}
+		<div class="alert"><strong>Error: </strong>{{paste_errormsg}}</div>
+	{% endif %}
+	#}
+
+	<label class="text" for="poster_name">Poster Name: </label>
+	<input type="text" name="poster_name" placeholder="Anonymous">
+
+	<label class="checkbox"><input type="checkbox" name="syntax_highlight" value="syntax_highlight">Enable syntax highlighting?</label>
+	<textarea type="text" name="paste_content" placeholder="Paste content..." cols="100" rows="20" wrap="true" class="expand"></textarea>
+	<br />
+	<button type="submit" name="action" value="paste" class="btn">Submit</button>
+</form>

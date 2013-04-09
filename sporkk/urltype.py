@@ -12,12 +12,28 @@
 # AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, 
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+class URLTypeSubmitForm:
+	def __init__(self, form, form_tab_id, form_tab_title):
+		self.form = form
+		self.form_tab_id = form_tab_id
+		self.form_tab_title = form_tab_title
+
+	def to_template_dict(self):
+		return { "tabid": self.form_tab_id, "tabtitle": self.form_tab_title, "form": self.form }
+
+
 class URLType:
 	"""
 	Abstract base class for a URL type.
 
 	A URL type represents a type of URL that Sporkk handles, such as a pastebin URL or a shortener URL.
 	"""
+
+	def get_submit_form(self):
+		"""
+		Renders this URL type's submit form, returning it as a URLTypeSubmitForm.
+		"""
+		raise NotImplementedError("render_submit_form is not implemented for this URL type.")
 
 	def handle_view(self, url_id, dbobj):
 		"""

@@ -18,39 +18,24 @@
 
 {% block content %}
 	<ul class="nav nav-tabs">
-		<li class="active"><a href="#tab-shortener" data-toggle="tab">URL Shortener</a></li>
-		<li><a href="#tab-paste" data-toggle="tab">Pastebin</a></li>
+		{% for item in submit_forms %}
+			<li {% if loop.first %}class="active"{% endif %}>
+				<a href="#tab-{{ item.tabid }}" data-toggle="tab">{{ item.tabtitle }}</a>
+			</li>
+		{% endfor %}
 	</ul>
 
 	<div class="tab-content">
-		<div class="tab-pane active" id="tab-shortener">
-			<form name="shorten" method="POST">
-				<legend>Shorten URL</legend>
-				{% if shortener_errormsg is defined %}
-					<div class="alert"><strong>Error: </strong>{{shortener_errormsg}}</div>
-				{% endif %}
+		{% if errormsg is defined %}
+			<div class="alert"><strong>Error: </strong>{{ errormsg }}</div>
+		{% endif %}
 
-				<input type="text" name="longurl" placeholder="URL to shorten..." class="expand">
-				<br />
-				<button type="submit" name="action" value="shorten" class="btn">Shorten URL</button>
-			</form>
-		</div>
+		{% for item in submit_forms %}
 
-		<div class="tab-pane" id="tab-paste">
-			<form name="paste" method="POST">
-				<legend>Pastebin</legend>
-				{% if paste_errormsg is defined %}
-					<div class="alert"><strong>Error: </strong>{{paste_errormsg}}</div>
-				{% endif %}
+			<div class="tab-pane {% if loop.first %}active{% endif %}" id="tab-{{ item.tabid }}">
+				{% include item.form %}
+			</div>
 
-				<label class="text" for="poster_name">Poster Name: </label>
-				<input type="text" name="poster_name" placeholder="Anonymous">
-
-				<label class="checkbox"><input type="checkbox" name="syntax_highlight" value="syntax_highlight">Enable syntax highlighting?</label>
-				<textarea type="text" name="paste_content" placeholder="Paste content..." cols="100" rows="20" wrap="true" class="expand"></textarea>
-				<br />
-				<button type="submit" name="action" value="paste" class="btn">Submit</button>
-			</form>
-		</div>
+		{% endfor %}
 	</div>
 {% endblock %}

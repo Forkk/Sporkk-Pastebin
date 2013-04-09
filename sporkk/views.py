@@ -19,12 +19,17 @@ from flask.ext.sqlalchemy import orm
 
 from urlmodel import URLMapping, get_mapping, url_id_taken, generate_unused_url_id
 
+import json
+
 # List of URL types. These act as 'modules' for Sporkk features.
 url_types = []
 
 @app.route('/', methods = ['GET', 'POST'])
 def submit_form():
 	"""The page for submitting things to the URL shortener."""
+
+	# TODO: Display error messages
+
 	if request.method == 'POST':
 		action = request.form['action']
 
@@ -38,7 +43,13 @@ def submit_form():
 		abort(400)
 
 	elif request.method == 'GET':
-		return render_template("submit-form.html")
+		submit_forms = []
+
+		# Get a list of the submit form dicts.
+		for utype in url_types:
+			submit_forms.append(utype.get_submit_form().to_template_dict())
+		return render_template("submit-form.html", submit_forms = submit_forms)
+
 
 	abort(500)
 

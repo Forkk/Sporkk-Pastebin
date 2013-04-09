@@ -16,7 +16,7 @@ from . import app, db
 
 from flask import render_template, redirect, abort, url_for
 
-from urltype import URLType
+from urltype import URLType, URLTypeSubmitForm
 from urlmodel import URLMapping, generate_unused_url_id
 
 import re
@@ -30,6 +30,9 @@ def get_url_types_provided():
 class ShortenedURLType(URLType):
 	"""URL type representing a shortened URL."""
 
+	def get_submit_form(self):
+		return URLTypeSubmitForm("shortener-form.html", "shorten", "URL Shortener")
+
 	def handle_view(self, url_id, shorturl):
 		if shorturl is None or type(shorturl) is not ShortenedURLModel:
 			return redirect("/") # TODO: Add better error handling in this case.
@@ -41,7 +44,7 @@ class ShortenedURLType(URLType):
 
 		# If the long URL is not a valid URL.
 		if not urlregex.search(longurl):
-			return render_template("submit-form.html", shortener_errormsg = "You must specify a valid URL.")
+			return redirect("/")
 
 		# Generate a random string for the URL ID. Make sure it's not in use.
 		url_id = generate_unused_url_id(app.config.get('SHORTURL_LENGTH'))
