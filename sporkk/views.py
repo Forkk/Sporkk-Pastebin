@@ -19,9 +19,8 @@ from flask.ext.sqlalchemy import orm
 
 from urlmodel import URLMapping, get_mapping, url_id_taken, generate_unused_url_id
 
-import re
-
-urlregex = re.compile(r'^(https?|ftp)://')
+# List of URL types. These act as 'modules' for Sporkk features.
+url_types = []
 
 @app.route('/', methods = ['GET', 'POST'])
 def submit_form():
@@ -29,20 +28,19 @@ def submit_form():
 	if request.method == 'POST':
 		action = request.form['action']
 
-		if action == 'shorten':
-			return shortener_submit()
+		# Find the URL type whose submit action corresponds to the action we received.
+		for utype in url_types:
+			if action == utype.get_submit_action_id():
+				# When we find it, hand over processing to it.
+				return utype.handle_submit(request)
 
-		elif action == 'paste':
-			return paste_submit()
-
-		else:
-			abort(400)
+		# If there isn't one, assume the request was invalid and give a 400 error.
+		abort(400)
 
 	elif request.method == 'GET':
 		return render_template("submit-form.html")
 
-	else:
-		abort(500)
+	abort(500)
 
 
 # For any URL types
@@ -51,151 +49,38 @@ def url_id_view(url_id):
 	"""View that goes to whatever the specified URL ID maps to."""
 	mapping = get_mapping(url_id)
 
-	# If this URL maps to a shortened URL, redirect.
-	if type(mapping) is ShortenedURL:
-		return handle_shorturl(mapping)
-
-	elif type(mapping) is Paste:
-		return handle_paste(mapping)
-
-	else:
+	if mapping is None:
 		return redirect("/")
 
+	mapping_type = type(mapping)
+
+	# Find the URL type whose model type matches and let it handle rendering the view.
+	for utype in url_types:
+		if mapping_type is utype.get_model_type():
+			return utype.handle_view(url_id, mapping)
+
+	# If nothing is found, act like the URL ID doesn't even exist.
+	return redirect("/")
 
 
-###################
-#### SHORTENER ####
-###################
+####################
+#### INITIALIZE ####
+####################
 
-# Shortened URLs
-class ShortenedURL(URLMapping):
-	"""Database model for shortened URLs"""
-	__tablename__ = "shortened_urls"
+# Load URL type modules.
+import shortenedurl as su
+import pastebinurl as pu
 
-	url_id = db.Column(db.String(64), db.ForeignKey('url_map.url_id'), primary_key = True)
+# FIXME: This is a pretty stupid way of loading things.
+typemodules = [ su, pu ]
 
-	mapped_url = db.Column(db.Text)
+for typemod in typemodules:
+	try:
+		url_types += typemod.get_url_types_provided()
 
-	__mapper_args__ = { 'polymorphic_identity': 'short', }
-
-# Get shortened URL
-def get_shorturl(url_id):
-	"""Looks up the given URL ID in the database and returns its corresponding shortened URL object.
-	Returns None if the URL ID doesn't correspond to a shortened URL."""
-	return ShortenedURL.query.filter_by(url_id = url_id).first()
-
-# View shorten
-@app.route('/s/<url_id>')
-@app.route('/short/<url_id>')
-def shorturl_view(url_id):
-	"""View for shortened URLs only."""
-	shorturl = get_shorturl(url_id)
-	return handle_shorturl(shorturl)
-
-# View shorten
-def handle_shorturl(shorturl):
-	"""Returns the response page for the given shortened URL"""
-	if shorturl is None:
-		return redirect("/")
-
-	return redirect(shorturl.mapped_url)
-
-# Submit shorten
-def shortener_submit():
-	longurl = request.form['longurl']
-
-	# If the long URL is not a valid URL.
-	if not urlregex.search(longurl):
-		return render_template("submit-form.html", shortener_errormsg = "You must specify a valid URL.")
-
-	# Generate a random string for the URL ID. Make sure it's not in use.
-	url_id = generate_unused_url_id(app.config.get('SHORTURL_LENGTH'))
-
-	shorturl = ShortenedURL()
-	shorturl.url_id = url_id
-	shorturl.mapped_url = longurl
-
-	db.session.add(shorturl)
-	db.session.commit()
-
-	return render_template("shorten-success.html", shortened_url = url_for('url_id_view', url_id = shorturl.url_id))
-
-
-##################
-#### PASTEBIN ####
-##################
-
-# Paste
-class Paste(URLMapping):
-	"""Database model for pastes in the pastebin."""
-	__tablename__ = "pastes"
-
-	url_id = db.Column(db.String(64), db.ForeignKey('url_map.url_id'), primary_key = True)	
-
-	paste_content = db.Column(db.Text)
-
-	highlight_lang = db.Column(db.String(6))
-
-	__mapper_args__ = { 'polymorphic_identity': 'paste', }
-
-# Get a paste
-def get_paste(url_id):
-	"""Looks up the given URL ID in the database and returns its corresponding paste.
-	Returns None if the URL ID is not a paste"""
-	return Paste.query.filter_by(url_id = url_id).first()
-
-# View paste
-@app.route('/p/<url_id>')
-@app.route('/paste/<url_id>')
-def paste_view(url_id):
-	"""View for paste URLs only."""
-	paste = get_paste(url_id)
-	return handle_paste(paste)
-
-# View paste
-def handle_paste(paste):
-	"""Renders the page for viewing the given paste."""
-	if paste is None:
-		return redirect("/")
-
-	pprint = False
-	if paste.highlight_lang is not None and paste.highlight_lang != 'none':
-		pprint = True
-
-	poster = paste.posted_by
-	if poster == '':
-		poster = None
-
-	return render_template("pastebin-view.html", paste_content = paste.paste_content, syntax_highlight = pprint, 
-		poster = poster)
-
-# Submit paste
-def paste_submit():
-	paste_content = request.form['paste_content']
-
-	syntax_highlight = 'none'
-	if 'syntax_highlight' in request.form and request.form['syntax_highlight']:
-		syntax_highlight = 'auto'
-
-	poster_name = None
-	if 'poster_name' in request.form and request.form['poster_name'] is not None: 
-		poster_name = request.form['poster_name']
-
-	# Generate a random string for the URL ID. Make sure it's not in use.
-	url_id = generate_unused_url_id(app.config.get('SHORTURL_LENGTH'))
-
-	paste = Paste()
-	paste.url_id = url_id
-	paste.paste_content = paste_content
-	paste.highlight_lang = syntax_highlight
-	paste.posted_by = poster_name
-
-	db.session.add(paste)
-	db.session.commit()
-
-	return redirect(url_id)
-
-
+	except AttributeError:
+		# If get_url_types_provided doesn't exist, this isn't a proper type module we can load URL types from.
+		continue
 
 # Initialize the DB table.
 db.create_all()
