@@ -16,7 +16,7 @@
 	{% endblock %}
 </head>
 
-<body>
+<body onload="{% block onload %}{% endblock %}">
 	{% block body %}
 	<div class="container">
 		<div class="row">

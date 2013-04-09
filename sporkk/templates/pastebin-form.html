@@ -33,7 +33,7 @@ td.lspace
 			<td class="lspace"><label class="text" for="syntax">Syntax Highlighting</label></td>
 		</tr>
 		<tr>
-			<td class="rspace"><input type="text" name="poster_name" tabindex="1" placeholder="Anonymous"></td>
+			<td class="rspace"><input type="text" name="poster_name" tabindex="1" placeholder="Anonymous" id="poster_name"></td>
 			<td class="lspace"><select name="syntax" tabindex="2">
 				{% for dbname, item in syntax_options.iteritems() %}
 					<option value="{{ dbname }}">{{ item.dispname }}</option>
@@ -46,6 +46,28 @@ td.lspace
 
 	<textarea type="text" name="paste_content" tabindex="3" placeholder="Paste content..." cols="100" rows="20" wrap="true" class="expand"></textarea>
 	<br />
-	<button type="submit" name="action" value="paste" tabindex="4" class="btn">Submit</button>
+	<button type="submit" onclick="savePosterName();" name="action" value="paste" tabindex="4" class="btn">Submit</button>
 </form>
+{% endblock %}
+
+{% block onload %}{{ super() }} loadPosterName();{% endblock %}
+
+{% block js_body %}
+<script type='text/javascript' src='/static/js/cookiemonster.js'></script>
+<script type='text/javascript'>
+function loadPosterName()
+{
+	var pName = getCookie("poster_name");
+
+	if (pName != null)
+	{
+		document.getElementById('poster_name').value = pName;
+	}
+}
+
+function savePosterName()
+{
+	setCookie("poster_name", document.getElementById('poster_name').value);
+}
+</script>
 {% endblock %}
