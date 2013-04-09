@@ -15,6 +15,7 @@
 from . import db
 
 import string, random
+from datetime import datetime
 
 class URLMapping(db.Model):
 	"""Model for mapping URLs to their corresponding items."""
@@ -24,6 +25,10 @@ class URLMapping(db.Model):
 	url_type = db.Column(db.String(10))
 
 	posted_by = db.Column(db.String(50))
+
+	# Meta-stuff
+	poster_ip = db.Column(db.String(46))
+	timestamp = db.Column(db.DateTime, default = datetime.utcnow())
 
 	__mapper_args__ = { 'polymorphic_identity': 'urlmap', 
 		'polymorphic_on': url_type,

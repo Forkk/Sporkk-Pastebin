@@ -57,7 +57,10 @@ class PastebinURLType(URLType):
 
 		poster_name = None
 		if 'poster_name' in request.form and request.form['poster_name'] is not None: 
-			poster_name = request.form['poster_name']
+			poster_name = request.form['poster_name'].strip()
+
+		if poster_name == '':
+			poster_name = None
 
 		# Generate a random string for the URL ID. Make sure it's not in use.
 		url_id = generate_unused_url_id(app.config.get('SHORTURL_LENGTH'))
@@ -67,6 +70,7 @@ class PastebinURLType(URLType):
 		paste.paste_content = paste_content
 		paste.highlight_lang = syntax_highlight
 		paste.posted_by = poster_name
+		paste.poster_ip = request.remote_addr
 
 		db.session.add(paste)
 		db.session.commit()

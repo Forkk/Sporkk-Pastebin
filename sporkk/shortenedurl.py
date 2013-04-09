@@ -55,6 +55,7 @@ class ShortenedURLType(URLType):
 		shorturl = ShortenedURLModel()
 		shorturl.url_id = url_id
 		shorturl.mapped_url = longurl
+		shorturl.poster_ip = request.remote_addr
 
 		db.session.add(shorturl)
 		db.session.commit()
