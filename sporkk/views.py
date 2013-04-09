@@ -15,43 +15,47 @@
 from . import app, db
 
 from flask import render_template, request, redirect, abort, url_for
-from flask.ext.sqlalchemy import orm
 
 from urlmodel import URLMapping, get_mapping, url_id_taken, generate_unused_url_id
-
-import json
 
 # List of URL types. These act as 'modules' for Sporkk features.
 url_types = []
 
-@app.route('/', methods = ['GET', 'POST'])
-def submit_form():
+@app.route('/')
+def index():
+	if len(url_types) > 0:
+		return redirect(url_for('submit_form', type_spec = url_types[0].get_specifiers()[0]))
+	else:
+		abort(500)
+
+@app.route('/submit/<type_spec>', methods = ['GET', 'POST'])
+def submit_form(type_spec):
 	"""The page for submitting things to the URL shortener."""
-
-	# TODO: Display error messages
-
-	if request.method == 'POST':
-		action = request.form['action']
-
-		# Find the URL type whose submit action corresponds to the action we received.
-		for utype in url_types:
-			if action == utype.get_submit_action_id():
-				# When we find it, hand over processing to it.
-				return utype.handle_submit(request)
-
-		# If there isn't one, assume the request was invalid and give a 400 error.
-		abort(400)
-
-	elif request.method == 'GET':
+	if request.method == 'GET':
 		submit_forms = []
-
-		# Get a list of the submit form dicts.
+		url_type = None
+		
+		# Get a list of submit forms and find the apropriate URL type in the same loop.
 		for utype in url_types:
-			submit_forms.append(utype.get_submit_form().to_template_dict())
-		return render_template("submit-form.html", submit_forms = submit_forms)
+			submit_forms.append(utype.get_submit_form_info().
+				to_template_dict(url_for("submit_form", type_spec = utype.get_specifiers()[0])))
 
+			# If the given type spec matches one of the URL type's specifiers, show its submit page. 
+			# We'll do this after we're done getting the submit form list.
+			if type_spec in utype.get_specifiers():
+				url_type = utype
+				submit_forms[len(submit_forms)-1]["active"] = True
 
-	abort(500)
+		# Now, we show the submit form page (or error if the URL type wasn't found)
+		if url_type is not None:
+			return url_type.handle_submit_form(submit_forms)
+		else:
+			return redirect("/")
+
+	elif request.method == 'POST':
+		for utype in url_types:
+			if type_spec in utype.get_specifiers():
+				return utype.handle_submit(request)
 
 
 # For any URL types
@@ -95,11 +99,11 @@ def url_type_spec_view(type_spec, url_id):
 ####################
 
 # Load URL type modules.
-import shortenedurl as su
-import pastebinurl as pu
+import shortenedurl
+import pastebinurl
 
 # FIXME: This is a pretty stupid way of loading things.
-typemodules = [ su, pu ]
+typemodules = [ pastebinurl, shortenedurl ]
 
 for typemod in typemodules:
 	try:

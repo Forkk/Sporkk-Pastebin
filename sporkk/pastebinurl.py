@@ -26,8 +26,11 @@ def get_url_types_provided():
 class PastebinURLType(URLType):
 	"""URL type representing a pastebin URL."""
 
-	def get_submit_form(self):
+	def get_submit_form_info(self):
 		return URLTypeSubmitForm("pastebin-form.html", "paste", "Pastebin")
+
+	def handle_submit_form(self, form_info_list):
+		return render_template("pastebin-form.html", submit_forms = form_info_list)
 
 	def handle_view(self, url_id, paste):
 		if paste is None:
@@ -75,7 +78,7 @@ class PastebinURLType(URLType):
 		return PasteModel
 
 	def get_specifiers(self):
-		return [ 'p', 'paste' ]
+		return [ 'paste', 'p' ]
 
 	def get_submit_action_id(self):
 		return 'paste'

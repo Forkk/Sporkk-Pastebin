@@ -1,3 +1,7 @@
+{% extends "submit-form.html" %}
+{% block title %}Sporkk - URL Shortener{% endblock %}
+
+{% block form %}
 <form name="shorten" method="POST">
 	<legend>Shorten URL</legend>
 	{# Disabled. Error messages will be handled by the main submit form template.
@@ -10,3 +14,4 @@
 	<br />
 	<button type="submit" name="action" value="shorten" class="btn">Shorten URL</button>
 </form>
+{% endblock %}

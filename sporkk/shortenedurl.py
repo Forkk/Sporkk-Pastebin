@@ -30,8 +30,11 @@ def get_url_types_provided():
 class ShortenedURLType(URLType):
 	"""URL type representing a shortened URL."""
 
-	def get_submit_form(self):
+	def get_submit_form_info(self):
 		return URLTypeSubmitForm("shortener-form.html", "shorten", "URL Shortener")
+
+	def handle_submit_form(self, form_info_list):
+		return render_template("shortener-form.html", submit_forms = form_info_list)
 
 	def handle_view(self, url_id, shorturl):
 		if shorturl is None or type(shorturl) is not ShortenedURLModel:
@@ -62,7 +65,7 @@ class ShortenedURLType(URLType):
 		return ShortenedURLModel
 
 	def get_specifiers(self):
-		return [ 's', 'short' ]
+		return [ 'short', 's' ]
 
 	def get_submit_action_id(self):
 		return 'shorten'

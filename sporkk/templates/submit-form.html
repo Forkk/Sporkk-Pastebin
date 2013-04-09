@@ -19,8 +19,8 @@
 {% block content %}
 	<ul class="nav nav-tabs">
 		{% for item in submit_forms %}
-			<li {% if loop.first %}class="active"{% endif %}>
-				<a href="#tab-{{ item.tabid }}" data-toggle="tab">{{ item.tabtitle }}</a>
+			<li {% if item.active %}class="active"{% endif %}>
+				<a href="{{ item.tabhref }}">{{ item.tabtitle }}</a>
 			</li>
 		{% endfor %}
 	</ul>
@@ -30,12 +30,7 @@
 			<div class="alert"><strong>Error: </strong>{{ errormsg }}</div>
 		{% endif %}
 
-		{% for item in submit_forms %}
-
-			<div class="tab-pane {% if loop.first %}active{% endif %}" id="tab-{{ item.tabid }}">
-				{% include item.form %}
-			</div>
-
-		{% endfor %}
+		{% block form %}
+		{% endblock %}
 	</div>
 {% endblock %}

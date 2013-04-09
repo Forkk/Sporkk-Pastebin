@@ -36,7 +36,8 @@ def get_mapping(url_id):
 
 def url_id_taken(url_id):
 	"""Checks if the given URL ID is taken."""
-	return get_mapping(url_id) is not None
+	return url_id not in reserved_url_ids and get_mapping(url_id) is not None
+
 
 def generate_url_id(length):
 	"""Generates a random URL ID with the given length."""
@@ -48,3 +49,7 @@ def generate_unused_url_id(length):
 	while url_id_taken(url_id):
 		url_id = generate_url_id(length)
 	return url_id
+
+# URL IDs that cannot be used by URL mappings.
+# These are basically a bunch of URLs I came up with that may be used in the future.
+reserved_url_ids = [ 'submit', 'index', 'list', 'status', 'info' ]

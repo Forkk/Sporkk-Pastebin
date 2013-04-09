@@ -1,3 +1,7 @@
+{% extends "submit-form.html" %}
+{% block title %}Sporkk - URL Shortener{% endblock %}
+
+{% block form %}
 <form name="paste" method="POST">
 	<legend>Pastebin</legend>
 	{# Disabled. Error messages will be handled by the main submit form template.
@@ -14,3 +18,4 @@
 	<br />
 	<button type="submit" name="action" value="paste" class="btn">Submit</button>
 </form>
+{% endblock %}

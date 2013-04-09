@@ -18,8 +18,8 @@ class URLTypeSubmitForm:
 		self.form_tab_id = form_tab_id
 		self.form_tab_title = form_tab_title
 
-	def to_template_dict(self):
-		return { "tabid": self.form_tab_id, "tabtitle": self.form_tab_title, "form": self.form }
+	def to_template_dict(self, tabhref):
+		return { "tabhref": tabhref, "tabtitle": self.form_tab_title, "form": self.form }
 
 
 class URLType:
@@ -29,11 +29,18 @@ class URLType:
 	A URL type represents a type of URL that Sporkk handles, such as a pastebin URL or a shortener URL.
 	"""
 
-	def get_submit_form(self):
+	def get_submit_form_info(self):
 		"""
 		Renders this URL type's submit form, returning it as a URLTypeSubmitForm.
 		"""
-		raise NotImplementedError("render_submit_form is not implemented for this URL type.")
+		raise NotImplementedError("get_submit_form_info is not implemented for this URL type.")
+
+	def handle_submit_form(self, form_info_list):
+		"""
+		Function that handles this URL type's submit form. Should return a rendering of the submit form.
+		The form_info_list argument is a list of dicts generated from the URLTypeSubmitForms of all the loaded URL types. This list is used for displaying tabs.
+		"""
+		raise NotImplementedError("handle_submit_form is not implemented for this URL type.")
 
 	def handle_view(self, url_id, dbobj):
 		"""
@@ -57,9 +64,9 @@ class URLType:
 		"""
 		Returns a list of URL specifiers that can be put before a URL ID to specify that the user wants this URL type only.
 		For example: If this type's specifiers are ['p', 'paste'], the user can go to the URL /p/<url_id> to ensure that the given URL is a paste, not something else. If the user goes to /p/<url_id> and the URL ID is not that of a paste, it will be treated as if it does not exist.
-		It is not mandatory to override this function when subclassing URLType since, by default, it returns as if there are no URL specifiers for the URL type.
+		You must override this function and provide at least one URL specifier when subclassing or the submit URL won't work.
 		"""
-		return []
+		raise NotImplementedError("get_specifiers is not implemented for this URL type.")
 
 	def get_submit_action_id(self):
 		"""
