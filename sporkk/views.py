@@ -29,6 +29,7 @@ def index():
 		abort(500)
 
 @app.route('/submit/<type_spec>', methods = ['GET', 'POST'])
+@app.route('/<type_spec>/submit', methods = ['GET', 'POST'])
 def submit_form(type_spec):
 	"""The page for submitting things to the URL shortener."""
 	if request.method == 'GET':
