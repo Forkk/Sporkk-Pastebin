@@ -3,9 +3,8 @@
 SQLALCHEMY_DATABASE_URI = 'mysql://sporkk@127.0.0.1/sporkk'
 
 
-# URL Shortener stuff
+# Length of generated short URLs
+SHORTURL_LENGTH = 5
 
-# Indicates the base URL for the URL shortener (eg 'http://s.forkk.me/')
-SHORTENER_ROOT_URL = ''
-
+# Port number for test server.
 SERVER_PORT = 5000
