@@ -49,6 +49,13 @@ class ShortenedURLType(URLType):
 		if not urlregex.search(longurl):
 			return redirect("/")
 
+		# If prevent dupe IDs is enabled, check if this URL has already been shortened.
+		if app.config.get('SHORTEN_PREVENT_DUPE_IDS'):
+			shorturl = get_by_mapped_url(longurl)
+			if shorturl is not None:
+				# If this URL has already been shortened, give the user the already shortened URL, rather than creating a new shortened URL for it.
+				return render_template("shorten-success.html", shortened_url = url_for('url_id_view', url_id = shorturl.url_id))
+
 		# Generate a random string for the URL ID. Make sure it's not in use.
 		url_id = generate_unused_url_id(app.config.get('SHORTURL_LENGTH'))
 
@@ -82,9 +89,14 @@ class ShortenedURLModel(URLMapping):
 
 		__mapper_args__ = { 'polymorphic_identity': 'short', }
 
-def get_shorturl(self, url_id):
-		"""Looks up the given URL ID in the database and returns its corresponding shortened URL object.
-		Returns None if the URL ID doesn't correspond to a shortened URL."""
-		return ShortenedURLModel.query.filter_by(url_id = url_id).first()
+def get_shorturl(url_id):
+	"""Looks up the given URL ID in the database and returns its corresponding shortened URL object.
+	Returns None if the URL ID doesn't correspond to a shortened URL."""
+	return ShortenedURLModel.query.filter_by(url_id = url_id).first()
+
+def get_by_mapped_url(mapped_url):
+	"""Finds a shortened URL in the database whose mapped URL matches the given URL."""
+	return ShortenedURLModel.query.filter_by(mapped_url = mapped_url).first()
+
 
 url_types = [ ShortenedURLType() ]
