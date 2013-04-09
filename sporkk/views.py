@@ -63,6 +63,22 @@ def url_id_view(url_id):
 	return redirect("/")
 
 
+@app.route('/<type_spec>/<url_id>')
+def url_type_spec_view(type_spec, url_id):
+	"""View that goes to the URL of the given type that the given ID maps to"""
+	for utype in url_types:
+		# If the given type spec matches one of the URL type's specifiers.
+		if type_spec in utype.get_specifiers():
+			mapping = get_mapping(url_id)
+
+			# Make sure the model type matches the URL type's model type as well.
+			if type(mapping) is utype.get_model_type():
+				return utype.handle_view(url_id, mapping)
+
+	# It's not valid, so go home.
+	return redirect("/")
+
+
 ####################
 #### INITIALIZE ####
 ####################
