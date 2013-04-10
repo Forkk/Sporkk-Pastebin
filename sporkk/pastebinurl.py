@@ -114,7 +114,7 @@ def get_paste(url_id):
 # google-code-prettify language info
 pp_langs = OrderedDict([
 	(None, dict(dispname="Plain Text")), # I'm sorry.
-	("auto", dict(dispname="Automatic")),
+	("auto", dict(ppname="auto", dispname="Automatic")),
 	("C", dict(ppname="c", dispname="C")),
 	("C++", dict(ppname="cpp", dispname="C++")),
 	("C#", dict(ppname="cs", dispname="C#")),
