@@ -121,7 +121,7 @@ pp_langs = OrderedDict([
 	("HTML", dict(ppname="html", dispname="HTML")),
 	("XML", dict(ppname="xml", dispname="XML")),
 	("Java", dict(ppname="java", dispname="Java")),
-	("JavaScript", dict(ppname="js", dispname="JavaScript")),
+	("JScript", dict(ppname="js", dispname="JavaScript")),
 	("Python", dict(ppname="py", dispname="Python")),
 	("Perl", dict(ppname="perl", dispname="Perl")),
 	("Ruby", dict(ppname="rb", dispname="Ruby")),
