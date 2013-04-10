@@ -81,7 +81,7 @@ class PastebinURLType(URLType):
 		db.session.add(paste)
 		db.session.commit()
 
-		return redirect(url_id)
+		return redirect(url_for('url_type_spec_view', type_spec = 'paste', url_id = url_id))
 
 
 	def get_model_type(self):
