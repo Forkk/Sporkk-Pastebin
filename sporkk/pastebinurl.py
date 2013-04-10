@@ -16,13 +16,17 @@ from . import app, db
 
 from flask import render_template, redirect, abort, url_for
 
-from urltype import URLType, URLTypeSubmitForm
+from urltype import URLType, URLTypeSubmitForm, err_id_map
 from urlmodel import URLMapping, generate_unused_url_id
 from postermodel import PosterModel, get_poster_timestamp, update_poster_timestamp
 
 from datetime import datetime, timedelta
 
 from collections import OrderedDict
+
+local_err_id_map = {
+	"empty-paste": "You can't post an empty paste.",
+}
 
 def get_url_types_provided():
 	"""Returns a list of the URL types provided by this module."""
@@ -34,8 +38,18 @@ class PastebinURLType(URLType):
 	def get_submit_form_info(self):
 		return URLTypeSubmitForm("pastebin-form.html", "paste", "Pastebin")
 
-	def handle_submit_form(self, form_info_list):
-		return render_template("pastebin-form.html", submit_forms = form_info_list, syntax_options = pp_langs)
+	def handle_submit_form(self, form_info_list, error_id):
+		errormsg = None
+		if error_id is None:
+			errormsg = None
+		elif error_id in local_err_id_map:
+			errormsg = local_err_id_map[error_id]
+		elif error_id in err_id_map:
+			errormsg = err_id_map[error_id]
+		else:
+			errormsg = "An unknown error occurred."
+
+		return render_template("pastebin-form.html", submit_forms = form_info_list, syntax_options = pp_langs, error = errormsg)
 
 	def handle_view(self, url_id, paste):
 		if paste is None:
@@ -60,9 +74,12 @@ class PastebinURLType(URLType):
 	def handle_submit(self, request):
 		user_lastpost = get_poster_timestamp(request.remote_addr)
 		if datetime.utcnow() < user_lastpost + timedelta(seconds = app.config.get('POST_COOLDOWN_TIME')):
-			return redirect("/")
+			return redirect(self.error_url('too-fast'))
 
 		paste_content = request.form['paste_content']
+
+		if paste_content.strip() == '':
+			return redirect(self.error_url('empty-paste'))
 
 		syntax_highlight = None
 		if 'syntax' in request.form and request.form['syntax'] is not None:

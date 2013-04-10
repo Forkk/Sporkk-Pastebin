@@ -4,11 +4,9 @@
 {% block form %}
 <form name="shorten" method="POST">
 	<legend>Shorten URL</legend>
-	{# Disabled. Error messages will be handled by the main submit form template.
-	{% if shortener_errormsg is defined %}
-		<div class="alert"><strong>Error: </strong>{{shortener_errormsg}}</div>
+	{% if error is defined and error != None %}
+		<div class="alert"><strong>Error: </strong>{{ error }}</div>
 	{% endif %}
-	#}
 
 	<input type="text" name="longurl" placeholder="URL to shorten..." class="expand">
 	<br />

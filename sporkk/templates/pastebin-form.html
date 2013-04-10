@@ -21,11 +21,9 @@ td.lspace
 {% block form %}
 <form name="paste" method="POST">
 	<legend>Pastebin</legend>
-	{# Disabled. Error messages will be handled by the main submit form template.
-	{% if paste_errormsg is defined %}
-		<div class="alert"><strong>Error: </strong>{{paste_errormsg}}</div>
+	{% if error is defined and error != None %}
+		<div class="alert"><strong>Error: </strong>{{ error }}</div>
 	{% endif %}
-	#}
 
 	<table>
 		<tr>

@@ -12,6 +12,10 @@
 # AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, 
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+from . import app
+
+from flask import url_for
+
 class URLTypeSubmitForm:
 	def __init__(self, form, form_tab_id, form_tab_title):
 		self.form = form
@@ -74,3 +78,10 @@ class URLType:
 		This value is used to determine which URL type a form corresponds to when it is submitted.
 		"""
 		raise NotImplementedError("get_submit_action_id is not implemented for this URL type.")
+
+	def error_url(self, err_id):
+		return url_for('submit_form', type_spec = self.get_specifiers()[0], err_id = err_id)
+
+err_id_map = {
+	"too-fast": "You're posting too fast! Please wait %i seconds between posts." % app.config.get('POST_COOLDOWN_TIME'),
+}

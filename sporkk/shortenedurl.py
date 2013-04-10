@@ -16,7 +16,7 @@ from . import app, db
 
 from flask import render_template, redirect, abort, url_for
 
-from urltype import URLType, URLTypeSubmitForm
+from urltype import URLType, URLTypeSubmitForm, err_id_map
 from urlmodel import URLMapping, generate_unused_url_id
 from postermodel import PosterModel, get_poster_timestamp, update_poster_timestamp
 
@@ -25,6 +25,11 @@ from datetime import datetime, timedelta
 import re
 
 urlregex = re.compile(r'^(https?|ftp)://')
+
+local_err_id_map = {
+	"bad-longurl": "Please specify a valid URL to shorten.",
+	"not-found": "The given short URL was not found.",
+}
 
 def get_url_types_provided():
 	"""Returns a list of the URL types provided by this module."""
@@ -36,10 +41,20 @@ class ShortenedURLType(URLType):
 	def get_submit_form_info(self):
 		return URLTypeSubmitForm("shortener-form.html", "shorten", "URL Shortener")
 
-	def handle_submit_form(self, form_info_list):
-		return render_template("shortener-form.html", submit_forms = form_info_list)
+	def handle_submit_form(self, form_info_list, error_id):
+		errormsg = None
+		if error_id is None:
+			errormsg = None
+		elif error_id in local_err_id_map:
+			errormsg = local_err_id_map[error_id]
+		elif error_id in err_id_map:
+			errormsg = err_id_map[error_id]
+		else:
+			errormsg = "An unknown error occurred."
 
-	def handle_view(self, url_id, shorturl):
+		return render_template("shortener-form.html", submit_forms = form_info_list, error = errormsg)
+
+	def handle_view(self, url_id, shorturl, error = None):
 		if shorturl is None or type(shorturl) is not ShortenedURLModel:
 			return redirect("/") # TODO: Add better error handling in this case.
 
@@ -50,7 +65,7 @@ class ShortenedURLType(URLType):
 
 		# If the long URL is not a valid URL.
 		if not urlregex.search(longurl):
-			return redirect("/")
+			return redirect(self.error_url('bad-longurl'))
 
 		# If prevent dupe IDs is enabled, check if this URL has already been shortened.
 		if app.config.get('SHORTEN_PREVENT_DUPE_IDS'):
@@ -61,7 +76,7 @@ class ShortenedURLType(URLType):
 
 		user_lastpost = get_poster_timestamp(request.remote_addr)
 		if datetime.utcnow() < user_lastpost + timedelta(seconds = app.config.get('POST_COOLDOWN_TIME')):
-			return redirect("/")
+			return redirect(self.error_url('too-fast'))
 
 		# Generate a random string for the URL ID. Make sure it's not in use.
 		url_id = generate_unused_url_id(app.config.get('SHORTURL_LENGTH'))
