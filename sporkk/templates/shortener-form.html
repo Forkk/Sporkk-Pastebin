@@ -2,14 +2,88 @@
 {% block title %}Sporkk - URL Shortener{% endblock %}
 
 {% block form %}
-<form name="shorten" method="POST">
-	<legend>Shorten URL</legend>
-	{% if error is defined and error != None %}
-		<div class="alert"><strong>Error: </strong>{{ error }}</div>
-	{% endif %}
+<div id="shorten_form_div">
+	<form name="shorten" id="shorten_form" action="" method="POST">
+		<legend>Shorten URL</legend>
+		<div class="input-append">
+			<input type="url" name="longurl" id="longurl" 
+				placeholder="URL to shorten..." class="input-large" 
+				tabindex="1" autocomplete="off" required />
+			<button type="submit" id="submit" name="action" value="shorten" class="btn" tabindex="2">Shorten URL</button>
+		</div>
+	</form>
+</div>
+{% endblock %}
 
-	<input type="text" name="longurl" placeholder="URL to shorten..." class="expand">
-	<br />
-	<button type="submit" name="action" value="shorten" class="btn">Shorten URL</button>
-</form>
+{% block js_body %}
+{{ super() }}
+
+<script type='text/javascript' src='/static/js/jquery.validate.min.js'></script>
+
+<script type='text/javascript'>
+
+$(document).ready(function()
+{
+	var successDiv = $('<div id="success" class="alert alert-success alert-block"><h4>Success</h4></div>').hide();
+	var successDivText = $('<span></span>');
+	var successDivClose = $('<button type="button" class="close">&times;</button>')
+	successDiv.prepend(successDivClose);
+	successDiv.append(successDivText);
+
+	var shortenForm = $("form#shorten_form");
+	var shortenFormDiv = $("div#shorten_form_div");
+
+	var shortenBtn = $("button#submit");
+	var urlInput = $("input#longurl");
+
+	shortenFormDiv.append(successDiv);
+
+	shortenForm.submit(function()
+	{
+		var postData = 'longurl=' + encodeURIComponent(urlInput.val());
+
+		$.ajax({
+			type: "POST",
+			url: "/short/submit/json",
+			data: postData,
+			dataType: "json",
+			success: function(data, textStatus)
+			{
+				if (data.error)
+				{
+					switch (data.errorType)
+					{
+					case "bad-longurl":
+						alert("Invalid URL"); // TODO: Handle these errors better.
+						break;
+
+					case "too-fast":
+						alert("Too fast");
+						break;
+
+					default:
+						alert("Unknown error: " + data.errorType);
+						break;
+					}
+
+					return;
+				}
+
+				successDivText.html("Your URL was shortened to <a href='/" + data.url + "'>" + data.url + "</a>.")
+				shortenForm.slideUp(300);
+				successDiv.slideDown(300);
+			},
+		});
+
+		return false;
+	});
+
+	successDivClose.click(function() 
+	{
+		shortenForm.slideDown(300);
+		successDiv.slideUp(300);
+	});
+});
+</script>
+
 {% endblock %}
