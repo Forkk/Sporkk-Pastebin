@@ -75,7 +75,7 @@ class ShortenedURLType(URLType):
 				return render_template("shorten-success.html", shortened_url = url_for('url_id_view', url_id = shorturl.url_id))
 
 		user_lastpost = get_poster_timestamp(request.remote_addr)
-		if datetime.utcnow() < user_lastpost + timedelta(seconds = app.config.get('POST_COOLDOWN_TIME')):
+		if user_lastpost is not None and datetime.utcnow() < user_lastpost + timedelta(seconds = app.config.get('POST_COOLDOWN_TIME')):
 			return redirect(self.error_url('too-fast'))
 
 		# Generate a random string for the URL ID. Make sure it's not in use.

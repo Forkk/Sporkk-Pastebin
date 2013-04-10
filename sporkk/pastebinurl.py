@@ -73,7 +73,7 @@ class PastebinURLType(URLType):
 
 	def handle_submit(self, request):
 		user_lastpost = get_poster_timestamp(request.remote_addr)
-		if datetime.utcnow() < user_lastpost + timedelta(seconds = app.config.get('POST_COOLDOWN_TIME')):
+		if user_lastpost is not None and datetime.utcnow() < user_lastpost + timedelta(seconds = app.config.get('POST_COOLDOWN_TIME')):
 			return redirect(self.error_url('too-fast'))
 
 		paste_content = request.form['paste_content']
