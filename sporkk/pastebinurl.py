@@ -18,6 +18,9 @@ from flask import render_template, redirect, abort, url_for
 
 from urltype import URLType, URLTypeSubmitForm
 from urlmodel import URLMapping, generate_unused_url_id
+from postermodel import PosterModel, get_poster_timestamp, update_poster_timestamp
+
+from datetime import datetime, timedelta
 
 from collections import OrderedDict
 
@@ -55,6 +58,10 @@ class PastebinURLType(URLType):
 
 
 	def handle_submit(self, request):
+		user_lastpost = get_poster_timestamp(request.remote_addr)
+		if datetime.utcnow() < user_lastpost + timedelta(seconds = app.config.get('POST_COOLDOWN_TIME')):
+			return redirect("/")
+
 		paste_content = request.form['paste_content']
 
 		syntax_highlight = None
@@ -79,6 +86,10 @@ class PastebinURLType(URLType):
 		paste.poster_ip = request.remote_addr
 		paste.highlight_lang = syntax_highlight
 		db.session.add(paste)
+
+		# Update the poster's timestamp
+		update_poster_timestamp(request.remote_addr, False)
+
 		db.session.commit()
 
 		return redirect(url_for('url_type_spec_view', type_spec = 'paste', url_id = url_id))

@@ -18,6 +18,9 @@ from flask import render_template, redirect, abort, url_for
 
 from urltype import URLType, URLTypeSubmitForm
 from urlmodel import URLMapping, generate_unused_url_id
+from postermodel import PosterModel, get_poster_timestamp, update_poster_timestamp
+
+from datetime import datetime, timedelta
 
 import re
 
@@ -56,6 +59,10 @@ class ShortenedURLType(URLType):
 				# If this URL has already been shortened, give the user the already shortened URL, rather than creating a new shortened URL for it.
 				return render_template("shorten-success.html", shortened_url = url_for('url_id_view', url_id = shorturl.url_id))
 
+		user_lastpost = get_poster_timestamp(request.remote_addr)
+		if datetime.utcnow() < user_lastpost + timedelta(seconds = app.config.get('POST_COOLDOWN_TIME')):
+			return redirect("/")
+
 		# Generate a random string for the URL ID. Make sure it's not in use.
 		url_id = generate_unused_url_id(app.config.get('SHORTURL_LENGTH'))
 
@@ -65,6 +72,10 @@ class ShortenedURLType(URLType):
 		shorturl.poster_ip = request.remote_addr
 
 		db.session.add(shorturl)
+
+		# Update the poster's timestamp
+		update_poster_timestamp(request.remote_addr, False)
+
 		db.session.commit()
 
 		return render_template("shorten-success.html", shortened_url = url_for('url_id_view', url_id = shorturl.url_id))
