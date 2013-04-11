@@ -18,70 +18,131 @@
 {% block js_body %}
 {{ super() }}
 
-<script type='text/javascript' src='/static/js/jquery.validate.min.js'></script>
+<script type='text/javascript' src="/static/js/jquery-ui.min.js"></script>
 
 <script type='text/javascript'>
 
+function createAlertDiv(content, title, alertType, alertBlock, closeCallback)
+{
+	if (typeof(alertBlock) === 'undefined')
+		alertBlock = false;
+	if (typeof(closeCallback) === 'undefined')
+		closeCallback = null;
+
+	var alertDiv = $('<div class="alert"></div>').hide();
+	var alertDivText = $('<span>' + content + '</span>');
+	var alertDivClose = $('<button type="button" class="close">&times;</button>');
+
+	switch (alertType)
+	{
+	case "success":
+		alertDiv.addClass("alert-success");
+		break;
+
+	case "error":
+		alertDiv.addClass("alert-error");
+		break;
+	}
+
+	var alertDivTitle;
+	if (alertBlock)
+	{
+		alertDivTitle = $('<h4>' + title + '</h4>');
+		alertDiv.addClass("alert-block");
+	}
+	else
+	{
+		alertDivTitle = $('<strong>' + title + '</strong>');
+	}
+
+	alertDiv.append(alertDivClose);
+	alertDiv.append(alertDivTitle);
+	alertDiv.append(alertDivText);
+
+	if (closeCallback == null)
+	{
+		alertDivClose.click(function() 
+		{
+			alertDiv.slideUp(300, function() { alertDiv.remove(); });
+		});
+	}
+	else
+	{
+		alertDivClose.click(closeCallback);
+	}
+
+	return { div: alertDiv, bodySpan: alertDivText, titleBlock: alertDivTitle, closeBtn: alertDivClose };
+}
+
 $(document).ready(function()
 {
-	var successDiv = $('<div id="success" class="alert alert-success alert-block"><h4>Success</h4></div>').hide();
-	var successDivText = $('<span></span>');
-	var successDivClose = $('<button type="button" class="close">&times;</button>')
-	successDiv.prepend(successDivClose);
-	successDiv.append(successDivText);
-
 	var shortenForm = $("form#shorten_form");
 	var shortenFormDiv = $("div#shorten_form_div");
 
 	var shortenBtn = $("button#submit");
 	var urlInput = $("input#longurl");
 
-	shortenFormDiv.append(successDiv);
-
 	shortenForm.submit(function()
 	{
 		var postData = 'longurl=' + encodeURIComponent(urlInput.val());
+
+		const aniTime = 200;
+
+		function showAlertDiv(msg, title, type)
+		{
+			alertDivObj = createAlertDiv(msg, title, type, true, function()
+				{
+					$(alertDivObj.div).hide("slide", { direction: "up" }, aniTime, function()
+						{
+							shortenForm.show("slide", { direction: "up" }, aniTime);
+							alertDivObj.div.remove();
+						});
+				});
+
+			shortenFormDiv.append(alertDivObj.div);
+			shortenForm.hide("slide", { direction: "up" }, aniTime, function()
+				{
+					$(alertDivObj.div).show("slide", { direction: "up" }, aniTime);
+				});
+		}
 
 		$.ajax({
 			type: "POST",
 			url: "/short/submit/json",
 			data: postData,
 			dataType: "json",
+
 			success: function(data, textStatus)
 			{
 				if (data.error)
 				{
+					var errorMsg;
 					switch (data.errorType)
 					{
 					case "bad-longurl":
-						alert("Invalid URL"); // TODO: Handle these errors better.
+						errorMsg = "Please specify a valid URL.";
 						break;
 
 					case "too-fast":
-						alert("Too fast");
+						errorMsg = "You're posting too fast! Please wait {{ post_cooldown }} seconds between posts!";
 						break;
 
 					default:
-						alert("Unknown error: " + data.errorType);
+						errorMsg = "An unknown error occurred: " + data.errorType;
 						break;
 					}
+
+					showAlertDiv(errorMsg, "Error", "error");
 
 					return;
 				}
 
-				successDivText.html("Your URL was shortened to <a href='/" + data.url + "'>" + data.url + "</a>.")
-				shortenForm.slideUp(300);
-				successDiv.slideDown(300);
+				showAlertDiv("Your URL was shortened to <a href='/" + data.url + "'>" + data.url + "</a>.",
+					"URL Shortened", "success");
 			},
 		});
 
 		return false;
-	});
-
-	successDivClose.click(function() 
-	{
-		shortenForm.slideDown(300);
-		successDiv.slideUp(300);
 	});
 });
 </script>

@@ -44,7 +44,8 @@ class ShortenedURLType(URLType):
 		return URLTypeSubmitForm("shortener-form.html", "shorten", "URL Shortener")
 
 	def handle_submit_form(self, form_info_list, unused):
-		return render_template("shortener-form.html", submit_forms = form_info_list)
+		return render_template("shortener-form.html", submit_forms = form_info_list, 
+			post_cooldown = app.config.get('POST_COOLDOWN_TIME'))
 
 	def handle_view(self, url_id, shorturl, error = None):
 		if shorturl is None or type(shorturl) is not ShortenedURLModel:
