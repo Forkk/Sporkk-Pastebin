@@ -10,6 +10,11 @@ SHORTURL_LENGTH = 5
 SERVER_PORT = 5000
 
 
+# Google Analytics
+# If this is set to a string, that string will be used as the Google Analytics tracking ID. If set to None, Analytics will be disabled.
+ANALYTICS_TRACKING_ID = None
+
+
 ############################
 #### ANTI-SPAM SETTINGS ####
 ############################
