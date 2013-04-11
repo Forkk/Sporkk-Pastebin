@@ -57,4 +57,4 @@ def generate_unused_url_id(length):
 
 # URL IDs that cannot be used by URL mappings.
 # These are basically a bunch of URLs I came up with that may be used in the future.
-reserved_url_ids = [ 'submit', 'index', 'list', 'status', 'info', 'error', 'err', 'e' ]
+reserved_url_ids = [ 'submit', 'index', 'list', 'status', 'info', 'error', 'err', 'e', 'json', 'api' ]

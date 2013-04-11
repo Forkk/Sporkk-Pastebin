@@ -28,9 +28,8 @@ def index():
 	else:
 		abort(500)
 
-@app.route('/<type_spec>/submit/err/<err_id>', methods = ['GET', 'POST'])
 @app.route('/<type_spec>/submit', methods = ['GET', 'POST'])
-def submit_form(type_spec, err_id = None):
+def submit_form(type_spec):
 	"""The page for submitting things to the URL shortener."""
 	if request.method == 'GET':
 		submit_forms = []
@@ -49,14 +48,18 @@ def submit_form(type_spec, err_id = None):
 
 		# Now, we show the submit form page (or error if the URL type wasn't found)
 		if url_type is not None:
-			return url_type.handle_submit_form(submit_forms, err_id)
+			return url_type.handle_submit_form(submit_forms)
 		else:
 			return redirect("/")
 
 	elif request.method == 'POST':
+		use_json = False
+		if "json" in request.args:
+			use_json = True
+
 		for utype in url_types:
 			if type_spec in utype.get_specifiers():
-				return utype.handle_submit(request)
+				return utype.handle_submit(request, use_json)
 
 # For any URL types
 @app.route('/<url_id>')

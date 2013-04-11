@@ -53,7 +53,7 @@ class URLType:
 		"""
 		raise NotImplementedError("handle_view is not implemented for this URL type.")
 
-	def handle_submit(self, request):
+	def handle_submit(self, request, return_json = False):
 		"""Function called when a user submits something for this URL type."""
 		raise NotImplementedError("handle_submit is not implemented for this URL type.")
 

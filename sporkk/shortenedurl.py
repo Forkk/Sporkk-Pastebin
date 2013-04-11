@@ -43,7 +43,7 @@ class ShortenedURLType(URLType):
 	def get_submit_form_info(self):
 		return URLTypeSubmitForm("shortener-form.html", "shorten", "URL Shortener")
 
-	def handle_submit_form(self, form_info_list, unused):
+	def handle_submit_form(self, form_info_list):
 		return render_template("shortener-form.html", submit_forms = form_info_list, 
 			post_cooldown = app.config.get('POST_COOLDOWN_TIME'))
 
@@ -100,15 +100,17 @@ class ShortenedURLType(URLType):
 			return render_template("shorten-success.html", shortened_url = url_for('url_id_view', url_id = shorturl.url_id))
 
 	def shorten_fail(self, error_id, return_json = False):
+		error_msg = "An unknown error occurred."
+
+		if error_id in local_err_id_map:
+			error_msg = local_err_id_map[error_id]
+		elif error_id in err_id_map:
+			error_msg = err_id_map[error_id]
+
 		if return_json:
-			return json.dumps({ "error": True, "errorType": error_id, })
+			return json.dumps({ "error": True, "errorType": error_id, "errorMsg": error_msg })
 		else:
-			if error_id in local_err_id_map:
-				return local_err_id_map[error_id]
-			elif error_id in err_id_map:
-				return err_id_map[error_id]
-			else:
-				return "An unknown error occurred."
+			return error_msg
 
 
 	def get_model_type(self):
@@ -143,7 +145,3 @@ def get_by_mapped_url(mapped_url):
 shorturl_type = ShortenedURLType()
 
 url_types = [ shorturl_type ]
-
-@app.route('/short/submit/json', methods = ['POST'])
-def handle_submit_ajax():
-	return shorturl_type.handle_submit(request, True)

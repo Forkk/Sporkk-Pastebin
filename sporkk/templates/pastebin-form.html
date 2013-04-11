@@ -19,53 +19,127 @@ td.lspace
 {% endblock %}
 
 {% block form %}
-<form name="paste" method="POST">
-	<legend>Pastebin</legend>
-	{% if error is defined and error != None %}
-		<div class="alert"><strong>Error: </strong>{{ error }}</div>
-	{% endif %}
+<div id="paste_form_div">
+	<form id="paste" name="paste" method="POST">
+		<legend>Pastebin</legend>
+		{% if error is defined and error != None %}
+			<div class="alert"><strong>Error: </strong>{{ error }}</div>
+		{% endif %}
 
-	<table>
-		<tr>
-			<td class="rspace"><label class="text" for="poster_name">Poster Name</label></td>
-			<td class="lspace"><label class="text" for="syntax">Syntax Highlighting</label></td>
-		</tr>
-		<tr>
-			<td class="rspace"><input type="text" name="poster_name" tabindex="1" placeholder="Anonymous" id="poster_name"></td>
-			<td class="lspace"><select name="syntax" tabindex="2">
-				{% for dbname, item in syntax_options.iteritems() %}
-					<option value="{{ dbname }}">{{ item.dispname }}</option>
-				{% endfor %}
-			</select></td>
-		</tr>
-	</table>
+		<table>
+			<tr>
+				<td class="rspace"><label class="text" for="poster_name">Poster Name</label></td>
+				<td class="lspace"><label class="text" for="syntax">Syntax Highlighting</label></td>
+			</tr>
+			<tr>
+				<td class="rspace"><input type="text" name="poster_name" tabindex="1" placeholder="Anonymous" id="poster_name"></td>
+				<td class="lspace"><select name="syntax" tabindex="2" id="syntax">
+					{% for dbname, item in syntax_options.iteritems() %}
+						<option value="{{ dbname }}">{{ item.dispname }}</option>
+					{% endfor %}
+				</select></td>
+			</tr>
+		</table>
 
-	<!-- <label class="checkbox"><input type="checkbox" name="syntax_highlight" value="syntax_highlight">Enable syntax highlighting?</label> -->
+		<!-- <label class="checkbox"><input type="checkbox" name="syntax_highlight" value="syntax_highlight">Enable syntax highlighting?</label> -->
 
-	<textarea type="text" name="paste_content" tabindex="3" placeholder="Paste content..." cols="100" rows="20" wrap="true" class="expand"></textarea>
-	<br />
-	<button type="submit" onclick="savePosterName();" name="action" value="paste" tabindex="4" class="btn">Submit</button>
-</form>
+		<textarea type="text" name="paste_content" tabindex="3" placeholder="Paste content..." cols="100" rows="14" wrap="true" class="expand" id="paste_content" required></textarea>
+		<br />
+		<button type="submit" name="action" value="paste" tabindex="4" class="btn">Submit</button>
+	</form>
+</div>
 {% endblock %}
 
-{% block onload %}{{ super() }} loadPosterName();{% endblock %}
-
 {% block js_body %}
+{{ super() }}
+
+<script type='text/javascript' src="/static/js/jquery-ui.min.js"></script>
+
 <script type='text/javascript' src='/static/js/cookiemonster.js'></script>
+<script type='text/javascript' src='/static/js/ajaxerrors.js'></script>
+<script type='text/javascript' src="/static/js/alertdiv.js"></script>
+
 <script type='text/javascript'>
-function loadPosterName()
+$(document).ready(function()
 {
-	var pName = getCookie("poster_name");
-
-	if (pName != null)
+	function loadPosterName()
 	{
-		document.getElementById('poster_name').value = pName;
-	}
-}
+		var pName = getCookie("poster_name");
 
-function savePosterName()
-{
-	setCookie("poster_name", document.getElementById('poster_name').value);
-}
+		if (pName != null)
+		{
+			document.getElementById('poster_name').value = pName;
+		}
+	}
+
+	function savePosterName()
+	{
+		setCookie("poster_name", document.getElementById('poster_name').value);
+	}
+
+
+	var alertDivObj = createAlertDiv("", "Error: ", "error", false, function() { alertDivObj.div.slideUp(300); });
+	$("#paste_form_div").prepend(alertDivObj.div);
+
+	$("form#paste").submit(function()
+	{
+		savePosterName();
+
+		if (alertDivObj.div.is(":animated"))
+		{
+			// If an animation is in progress, ignore the submit event.
+			return false;
+		}
+
+		if (alertDivObj.div.is(":visible"))
+		{
+			// If the alert is visible, hide it.
+			alertDivObj.closeCallback();
+		}
+
+		$.ajax({
+			type: "POST",
+			url: "/paste/submit?json",
+			data: $.param({ 
+				poster_name: $("#poster_name").val(), 
+				syntax: $("#syntax").val(), 
+				paste_content: $("#paste_content").val()
+			}),
+			dataType: "json",
+
+			success: function(data, textStatus)
+			{
+				if (data.error)
+				{
+					alertDivObj.bodySpan.text(data.errorMsg);
+					alertDivObj.div.slideDown(300);
+				}
+				else
+				{
+					window.location.href = data.url;
+				}
+			},
+
+			error: function(jqXHR, jqError, httpError)
+			{
+				var errorMsg = "An unknown error occurred.";
+
+				if (Math.floor(jqXHR.status / (Math.pow(10, 2)) % 10) !== 2)
+				{
+					errorMsg = getHTTPErrorMsg(jqXHR.status);
+				}
+				else
+				{
+					errorMsg = getJQErrorMsg(jqError);
+				}
+
+				alertDivObj.bodySpan.text(errorMsg);
+				alertDivObj.div.slideDown(300);
+			}
+		});
+
+		return false;
+	});
+});
 </script>
 {% endblock %}

@@ -24,6 +24,8 @@ from datetime import datetime, timedelta
 
 from collections import OrderedDict
 
+import json
+
 local_err_id_map = {
 	"empty-paste": "You can't post an empty paste.",
 }
@@ -38,18 +40,8 @@ class PastebinURLType(URLType):
 	def get_submit_form_info(self):
 		return URLTypeSubmitForm("pastebin-form.html", "paste", "Pastebin")
 
-	def handle_submit_form(self, form_info_list, error_id):
-		errormsg = None
-		if error_id is None:
-			errormsg = None
-		elif error_id in local_err_id_map:
-			errormsg = local_err_id_map[error_id]
-		elif error_id in err_id_map:
-			errormsg = err_id_map[error_id]
-		else:
-			errormsg = "An unknown error occurred."
-
-		return render_template("pastebin-form.html", submit_forms = form_info_list, syntax_options = pp_langs, error = errormsg)
+	def handle_submit_form(self, form_info_list):
+		return render_template("pastebin-form.html", submit_forms = form_info_list, syntax_options = pp_langs)
 
 	def handle_view(self, url_id, paste):
 		if paste is None:
@@ -71,15 +63,15 @@ class PastebinURLType(URLType):
 			poster = poster)
 
 
-	def handle_submit(self, request):
+	def handle_submit(self, request, return_json = False):
 		user_lastpost = get_poster_timestamp(request.remote_addr)
 		if user_lastpost is not None and datetime.utcnow() < user_lastpost + timedelta(seconds = app.config.get('POST_COOLDOWN_TIME')):
-			return redirect(self.error_url('too-fast'))
+			return self.paste_fail('too-fast', return_json)
 
 		paste_content = request.form['paste_content']
 
 		if paste_content.strip() == '':
-			return redirect(self.error_url('empty-paste'))
+			return self.paste_fail('empty-paste', return_json)
 
 		syntax_highlight = None
 		if 'syntax' in request.form and request.form['syntax'] is not None:
@@ -109,7 +101,27 @@ class PastebinURLType(URLType):
 
 		db.session.commit()
 
-		return redirect(url_for('url_type_spec_view', type_spec = 'paste', url_id = url_id))
+		return self.paste_success(paste, return_json)
+
+
+	def paste_success(self, paste, return_json = False):
+		if return_json:
+			return json.dumps({ "error": False, "url": paste.url_id })
+		else:
+			return redirect(url_for('url_type_spec_view', type_spec = 'paste', url_id = url_id))
+
+	def paste_fail(self, error_id, return_json = False):
+		error_msg = "An unknown error occurred."
+
+		if error_id in local_err_id_map:
+			error_msg = local_err_id_map[error_id]
+		elif error_id in err_id_map:
+			error_msg = err_id_map[error_id]
+
+		if return_json:
+			return json.dumps({ "error": True, "errorType": error_id, "errorMsg": error_msg })
+		else:
+			return error_msg
 
 
 	def get_model_type(self):
